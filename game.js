@@ -515,10 +515,12 @@ function leaveOther() {
 }
 
 function loop(now) {
+  requestAnimationFrame(loop);            // scheduled first, so one bad frame can never stop the game
   const dt = Math.min(0.05, (now - last) / 1000); last = now; TM += dt;
-  update(dt); draw();
-  if (S.mode === 'dlg' && S.portWho) drawPortrait($('port').getContext('2d'), S.portWho, 260, 360, TM);   // portraits breathe
-  requestAnimationFrame(loop);
+  try {
+    update(dt); draw();
+    if (S.mode === 'dlg' && S.portWho) drawPortrait($('port').getContext('2d'), S.portWho, 260, 360, TM);   // portraits breathe
+  } catch (e) { if (!loop.warned) { loop.warned = true; console.error(e); } }
 }
 
 // ---------- interaction ----------
@@ -731,6 +733,8 @@ function fit() {
 addEventListener('resize', fit); fit();
 setLang(lang);
 drawMask($('tmask').getContext('2d'), 'white', 100, 118, 96);
-requestAnimationFrame(loop);
+// The loop needs figures.js, light.js, depth.js and portraits.js, which load after this file:
+// start only when the whole page is in.
+if (document.readyState === 'complete') requestAnimationFrame(loop); else addEventListener('load', () => { last = performance.now(); requestAnimationFrame(loop); });
 // Test hook for automated play-throughs.
 window.__game = { S, interact, WORLD, catchSlip, enterOther };
